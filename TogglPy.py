@@ -175,7 +175,7 @@ class Toggl():
     def getWorkspace(self, name=None, id=None):
         '''return the first workspace that matches a given name or id'''
         workspaces = self.getWorkspaces() # get all workspaces
-        
+
         # if they give us nothing let them know we're not returning anything
         if name == None and id == None:
             print "Error in getWorkspace(), please enter either a name or an id as a filter"
@@ -191,7 +191,21 @@ class Toggl():
                 if workspace['id'] == int(id):
                     return workspace # if we find it return it
             return None # if we get to here and haven't found it return None
-    
+
+    def getWorkspaceUsers(self, id):
+        """
+        :param id: Workspace ID by which to query
+        :return: Users object returned from endpoint
+        """
+        return self.request(Endpoints.WORKSPACES + '/{0}/workspace_users'.format(id))
+
+    def getWorkspaceClients(self, id):
+        """
+        :param id: Workspace ID by which to query
+        :return: Clients object returned from endpoint
+        """
+        return self.request(Endpoints.WORKSPACES + '/{0}/clients'.format(id))
+
     #--------------------------------
     # Methods for getting client data
     #--------------------------------
@@ -202,7 +216,7 @@ class Toggl():
     def getClient(self, name=None, id=None):
         '''return the first workspace that matches a given name or id'''
         clients = self.getClients() # get all clients
-        
+
         # if they give us nothing let them know we're not returning anything
         if name == None and id == None:
             print "Error in getClient(), please enter either a name or an id as a filter"
@@ -276,6 +290,20 @@ class Toggl():
     def getProject(self, pid):
         '''return all projects that are visable to a user'''
         return self.request(Endpoints.PROJECTS + '/{0}'.format(pid))
+
+    def getProjectUsers(self, id):
+        """
+        :param id: Project ID by which to query
+        :return: Users object returned from endpoint
+        """
+        return self.request(Endpoints.PROJECTS + '/{0}/project_users'.format(id))
+
+    def getProjectTasks(self, id):
+        """
+        :param id: Project ID by which to query
+        :return: Tasks object returned from endpoint
+        """
+        return self.request(Endpoints.PROJECTS + '/{0}/tasks'.format(id))
 
     #---------------------------------
     # Methods for getting reports data
