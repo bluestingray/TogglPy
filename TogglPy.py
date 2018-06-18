@@ -389,6 +389,8 @@ class Toggl():
             return
         if name and workspace_id is None:
             return
+        if name:
+            name = name.encode('utf-8')
 
         # If there is no ID passed into this method then we are assuming
         # the user is trying to find the Toggl task based on the name
@@ -398,7 +400,8 @@ class Toggl():
             if not tasks:
                 return
             for task in tasks:
-                if str(task['name']) == str(name) and (not project_id or str(task['pid']) == str(project_id)):
+                task_name = task.get('name', '').encode('utf-8')
+                if str(task_name) == str(name) and (not project_id or str(task['pid']) == str(project_id)):
                     return task
 
         # Otherwise we are going to try to use the id directly instead
