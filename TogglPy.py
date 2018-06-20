@@ -341,11 +341,11 @@ class Toggl():
     # --------------------------------
     # Methods for getting PROJECTS data
     # --------------------------------
-    def getProjects(self, workspace_id):
-        return self.request(Endpoints.WORKSPACES + '/{0}/projects'.format(workspace_id))
+    def getProjects(self, workspace_id, active='true'):
+        return self.request(Endpoints.WORKSPACES + '/{0}/projects'.format(workspace_id), parameters={'active': active})
 
     def getProject(self, workspace_id, name=None, id=None):
-        projects = self.getProjects(workspace_id)
+        projects = self.getProjects(workspace_id, active='both')
 
         if name is None and id is None:
             print("Error in getProject(), please enter either a name or an id as a filter")
