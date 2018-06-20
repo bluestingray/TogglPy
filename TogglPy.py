@@ -4,10 +4,10 @@
 # --------------------------------------------------------------
 from datetime import datetime
 # for making requests
-import urllib2
-import urllib
+from urllib.parse import urlencode
+from urllib.request import urlopen, Request
 
-# parsing json data
+import base64
 import json
 
 
@@ -63,18 +63,18 @@ class Toggl():
     def setAPIKey(self, APIKey):
         '''set the API key in the request header'''
         # craft the Authorization
-        authHeader = APIKey + ":" + "api_token"
-        authHeader = "Basic " + authHeader.encode("base64").rstrip()
+        authHeader = APIKey.encode('utf-8') + b':api_token'
+        authHeader = b"Basic " + base64.b64encode(authHeader.rstrip())
 
         # add it into the header
         self.headers['Authorization'] = authHeader
 
     def setAuthCredentials(self, email, password):
-        authHeader = '{0}:{1}'.format(email, password)
-        authHeader = "Basic " + authHeader.encode("base64").rstrip()
+        authHeader = email.encode('utf-8') + b':' + password.encode('utf-8')
+        authHeader = b"Basic " + base64.b64encode(authHeader.rstrip())
 
         # add it into the header
-        self.headers['Authorization'] = authHeader
+        self.headers['Authorization'] = authHeader.decode()
 
     def setUserAgent(self, agent):
         '''set the User-Agent setting, by default it's set to TogglPy'''
@@ -86,37 +86,41 @@ class Toggl():
 
     def requestRaw(self, endpoint, parameters=None):
         '''make a request to the toggle api at a certain endpoint and return the RAW page data (usually JSON)'''
-        if parameters == None:
-            return urllib2.urlopen(urllib2.Request(endpoint, headers=self.headers)).read()
+        if parameters is None:
+            return urlopen(Request(endpoint, headers=self.headers)).read()
         else:
             if 'user_agent' not in parameters:
                 parameters.update({'user_agent': self.user_agent, })  # add our class-level user agent in there
-            endpoint = endpoint + "?" + urllib.urlencode(parameters)  # encode all of our data for a get request & modify the URL
-            return urllib2.urlopen(urllib2.Request(endpoint, headers=self.headers)).read()  # make request and read the response
+            endpoint = endpoint + "?" + urlencode(parameters)  # encode all of our data for a get request & modify the URL
+            return urlopen(Request(endpoint, headers=self.headers)).read() # make request and read the response
 
     def request(self, endpoint, parameters=None):
         '''make a request to the toggle api at a certain endpoint and return the page data as a parsed JSON dict'''
-        return json.loads(self.requestRaw(endpoint, parameters))
+        return json.loads(self.requestRaw(endpoint, parameters).decode())
 
     def postRequest(self, endpoint, parameters=None):
         '''make a POST request to the toggle api at a certain endpoint and return the RAW page data (usually JSON)'''
-        if parameters == None:
-            return json.loads(urllib2.urlopen(urllib2.Request(endpoint, headers=self.headers)).read())
+        if parameters is None:
+            with urlopen(Request(endpoint, headers=self.headers)) as res:
+                return json.loads(res.read().decode())
         else:
-            data = json.JSONEncoder().encode(parameters)
-            return json.loads(urllib2.urlopen(urllib2.Request(endpoint, data=data, headers=self.headers)).read())  # make request and read the response
+            data = json.JSONEncoder().encode(parameters).encode('utf-8')
+            with urlopen(Request(endpoint, data=data, headers=self.headers)) as res:
+                return json.loads(res.read().decode())
 
     def putRequest(self, endpoint, parameters=None):
         '''make a POST request to the toggle api at a certain endpoint and return the RAW page data (usually JSON)'''
-        if parameters == None:
-            request = urllib2.Request(endpoint, headers=self.headers)
+        if parameters is None:
+            request = Request(endpoint, headers=self.headers)
             request.get_method = lambda: 'PUT'
-            return json.loads(urllib2.urlopen(request).read())
+            with urlopen(request) as res:
+                return json.loads(res.read().decode())
         else:
-            data = json.JSONEncoder().encode(parameters)
-            request = urllib2.Request(endpoint, data=data, headers=self.headers)
+            data = json.JSONEncoder().encode(parameters).encode('utf-8')
+            request = Request(endpoint, data=data, headers=self.headers)
             request.get_method = lambda: 'PUT'
-            return json.loads(urllib2.urlopen(request).read())  # make request and read the response
+            with urlopen(request) as res:
+                return json.loads(res.read().decode())
 
     # ----------------------------------
     # Methods for managing Time Entries
@@ -168,7 +172,7 @@ class Toggl():
             elif projectname:
                 projectid = (self.searchClientProject(projectname))['data']['id']
             else:
-                print 'Too many missing parameters for query'
+                print('Too many missing parameters for query')
                 exit(1)
 
         year = datetime.now().year if not year else year
@@ -198,7 +202,7 @@ class Toggl():
 
         # if they give us nothing let them know we're not returning anything
         if name == None and id == None:
-            print "Error in getWorkspace(), please enter either a name or an id as a filter"
+            print("Error in getWorkspace(), please enter either a name or an id as a filter")
             return None
 
         if id == None:  # then we search by name
@@ -255,7 +259,7 @@ class Toggl():
 
         # if they give us nothing let them know we're not returning anything
         if name == None and id == None:
-            print "Error in getClient(), please enter either a name or an id as a filter"
+            print("Error in getClient(), please enter either a name or an id as a filter")
             return None
 
         if id == None:  # then we search by name
@@ -306,7 +310,7 @@ class Toggl():
             except:
                 continue
 
-        print 'Could not find client by the name'
+        print('Could not find client by the name')
         return None
 
     def getClientProject(self, clientName, projectName):
@@ -321,7 +325,7 @@ class Toggl():
                 cid = client['id']
 
         if not cid:
-            print 'Could not find such client name'
+            print('Could not find such client name')
             return None
 
         for projct in self.getClientProjects(cid):
@@ -329,7 +333,7 @@ class Toggl():
                 pid = projct['id']
 
         if not pid:
-            print 'Could not find such project name'
+            print('Could not find such project name')
             return None
 
         return self.getProject(pid)
@@ -344,7 +348,7 @@ class Toggl():
         projects = self.getProjects(workspace_id)
 
         if name is None and id is None:
-            print "Error in getProject(), please enter either a name or an id as a filter"
+            print("Error in getProject(), please enter either a name or an id as a filter")
             return None
 
         if id is None:
